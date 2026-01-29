@@ -3,3 +3,4 @@ streamlit
 # pandas
 # numpy
 # ethers  (but ethers is JS – if you have frontend JS, separate it)
+streamlit>=1.31.0
