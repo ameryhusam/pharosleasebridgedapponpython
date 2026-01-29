@@ -1,0 +1,5 @@
+streamlit
+# add other packages you used, e.g.
+# pandas
+# numpy
+# ethers  (but ethers is JS – if you have frontend JS, separate it)
