@@ -1,131 +1,198 @@
+# app.py
 import streamlit as st
-import base64  # For embedding images or SVGs if needed
+from streamlit.components.v1 import html
+import time
 
-# Function to get base64 of SVG logo (you can replace with actual base64 if image)
-def get_base64(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+# ────────────────────────────────────────────────────────────────
+# Page config & custom styling
+# ────────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Pharos LeaseBridge • Decentralized RWA Leasing",
+    page_icon="🌊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Simulated SVG logo for Pharos LeaseBridge (lighthouse + bridge theme)
-logo_svg = """
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100" height="100">
-    <path fill="#3b82f6" d="M24 4L4 20v24h40V20L24 4z"/>
-    <path fill="#d97706" d="M24 4l20 16v24H4V20L24 4zM24 12l-12 8v16h24V20l-12-8z"/>
-    <circle fill="#fff" cx="24" cy="28" r="4"/>
-    <path fill="#3b82f6" d="M20 40h8v4h-8z"/>
-</svg>
-"""
-
-# Background CSS - futuristic lighthouse theme (radial gradient with blue/gold)
-background_css = """
-body {
-    background: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.3) 0%, transparent 70%),
-                url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?auto=format&fit=crop&w=1920') no-repeat center/cover;
-    background-blend-mode: overlay;
-}
-"""
-
-# Main Streamlit app
-st.set_page_config(page_title="Pharos LeaseBridge | Decentralized RWA Leasing Platform", layout="wide")
-
-# Custom CSS for better design (standard RWA dapp style: clean, dark mode, hero, sections)
-st.markdown(f"""
+# Modern dark theme + glass effect
+st.markdown("""
     <style>
-        {background_css}
-        .stApp {{
-            color: #f1f5f9;
-            font-family: 'Inter', sans-serif;
-        }}
-        .hero {{
-            text-align: center;
-            padding: 50px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            margin-bottom: 40px;
-        }}
-        .section {{
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            margin-bottom: 30px;
-        }}
-        button {{
-            background-color: #3b82f6;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: none;
-        }}
-        button:hover {{
-            background-color: #2563eb;
-        }}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --accent: #3b82f6;
+        --accent-dark: #2563eb;
+        --gold: #d97706;
+        --text: #e2e8f0;
+        --text-muted: #94a3b8;
+        --border: rgba(226, 232, 240, 0.08);
+    }
+
+    body, .stApp {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .stApp > header { background: transparent !important; }
+    
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 4rem !important;
+    }
+
+    /* Glass card */
+    .glass-card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.8rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+        margin-bottom: 1.5rem;
+    }
+
+    .hero {
+        text-align: center;
+        padding: 5rem 1rem 4rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(217,119,6,0.08) 100%);
+        border-radius: 0 0 32px 32px;
+        margin: -1rem -1rem 3rem -1rem;
+    }
+
+    h1, h2, h3 {
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .connect-btn {
+        background: linear-gradient(90deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.8rem;
+        border-radius: 999px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .connect-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(59,130,246,0.4);
+    }
+
+    hr.divider {
+        border: none;
+        height: 1px;
+        background: linear-gradient(to right, transparent, var(--border), transparent);
+        margin: 3rem auto;
+        max-width: 300px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Header with logo
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.markdown(logo_svg, unsafe_allow_html=True)
-with col2:
-    st.title("Pharos LeaseBridge")
+# ────────────────────────────────────────────────────────────────
+# Simulated state
+# ────────────────────────────────────────────────────────────────
+if 'connected' not in st.session_state:
+    st.session_state.connected = False
+    st.session_state.address = None
 
-# Connect Wallet Button (simulated - integrate real JS if needed)
-if st.button("Connect Wallet"):
-    st.write("Wallet connected! Address: 0x...")
+# ────────────────────────────────────────────────────────────────
+# Sidebar
+# ────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.image("https://via.placeholder.com/180x60/1e293b/ffffff?text=Pharos+LeaseBridge", use_column_width=True)
+    
+    if not st.session_state.connected:
+        if st.button("Connect Wallet", key="connect_sidebar", use_container_width=True, type="primary"):
+            # Simulate connection
+            time.sleep(1.2)
+            st.session_state.connected = True
+            st.session_state.address = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+            st.rerun()
+    else:
+        st.success(f"Connected: {st.session_state.address[:6]}...{st.session_state.address[-4:]}")
+        if st.button("Disconnect", use_container_width=True):
+            st.session_state.connected = False
+            st.rerun()
 
-# Hero Section
+    st.divider()
+    st.caption("Network: Pharos Atlantic")
+    st.caption("Contract: 0xC4F8...91BF")
+
+# ────────────────────────────────────────────────────────────────
+# Hero
+# ────────────────────────────────────────────────────────────────
 st.markdown('<div class="hero">', unsafe_allow_html=True)
-st.header("Bridge Real World Assets to Blockchain")
-st.write("Pharos LeaseBridge empowers decentralized leasing of premium RWAs. Secure, transparent, and efficient – guided by the light of Pharos blockchain.")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Project Description Section
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.header("About the Project")
-st.write("""
-Pharos LeaseBridge is a pioneering platform on the Pharos blockchain, enabling seamless leasing of Real World Assets (RWAs) through NFTs. 
-Our vision merges the reliability of a lighthouse (Pharos) with innovative bridging of traditional assets to DeFi. 
-Features include secure rentals, admin controls, revenue withdrawal, and more.
+st.title("Pharos LeaseBridge")
+st.subheader("Real World Assets • Decentralized Leasing • Powered by Pharos")
+st.markdown("""
+    Securely tokenize, lease, and earn from real estate and infrastructure assets  
+    on the fast, low-cost Pharos Atlantic blockchain.
 """)
+col_a, col_b, col_c = st.columns([1,2,1])
+with col_b:
+    if st.button("Explore Available Assets", type="primary", use_container_width=True, key="explore_hero"):
+        st.switch_page("pages/2_Assets.py")  # You can create this page later
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Features Section (standard for RWA dapps)
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.header("Key Features")
-features = [
-    "Per-property rental rates",
-    "Time-based leasing without ownership transfer",
-    "Revenue sharing with beneficiaries",
-    "Oracle verification for assets",
-    "Yield farming for renters"
-]
-for feature in features:
-    st.write(f"- {feature}")
-st.markdown('</div>', unsafe_allow_html=True)
+# ────────────────────────────────────────────────────────────────
+# Quick stats / trust signals
+# ────────────────────────────────────────────────────────────────
+cols = st.columns(4)
+cols[0].metric("Total Value Locked", "$12.4M", "+18%")
+cols[1].metric("Active Leases", "347", "+42")
+cols[2].metric("Avg. APY", "9.2%", delta_color="normal")
+cols[3].metric("Properties", "19", "+3")
 
-# RWA Gallery (placeholder - integrate real dapp logic)
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.header("RWA Registry")
-st.write("Browse and lease available assets here. (Integrate with ethers.js for real functionality)")
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-# Contact Section
-st.markdown('<div class="section">', unsafe_allow_html=True)
-st.header("Contact Us")
-st.write("Email: info@pharosleasebridge.com")
-st.write("Discord: discord.gg/pharos")
-st.write("X: @pharos_network")
-contact_form = st.form(key="contact")
-name = contact_form.text_input("Your Name")
-email = contact_form.text_input("Your Email")
-message = contact_form.text_area("Message")
-submit = contact_form.form_submit_button("Send")
-if submit:
-    st.write("Message sent! (Simulated - add real backend)")
-st.markdown('</div>', unsafe_allow_html=True)
+# ────────────────────────────────────────────────────────────────
+# Features section
+# ────────────────────────────────────────────────────────────────
+st.header("Why Pharos LeaseBridge?", anchor="features")
+st.write("")
 
-# Footer
-st.markdown("© 2026 Pharos LeaseBridge. All rights reserved.")
+feat_cols = st.columns(3)
+with feat_cols[0]:
+    with st.container():
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.subheader("Per-Asset Rates")
+        st.write("Each property has its own customizable daily rate – perfect for hotels, apartments, offices.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# To run: streamlit run this_file.py
+with feat_cols[1]:
+    with st.container():
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.subheader("Revenue Sharing")
+        st.write("Beneficiaries & renters can participate in yield. Rent-to-invest model supported.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+with feat_cols[2]:
+    with st.container():
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.subheader("Fast & Cheap")
+        st.write("Built on Pharos Atlantic – sub-second finality, near-zero fees, high throughput.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# ────────────────────────────────────────────────────────────────
+# Call to action + footer
+# ────────────────────────────────────────────────────────────────
+st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+cta_col1, cta_col2 = st.columns([3,2])
+with cta_col1:
+    st.subheader("Ready to lease or invest?")
+    st.write("Connect your wallet to start exploring live RWAs on Pharos.")
+with cta_col2:
+    st.button("Connect Wallet & Start", type="primary", use_container_width=True, key="cta_final")
+
+st.markdown("""
+    <div style="text-align:center; color:var(--text-muted); margin-top:4rem; font-size:0.9rem;">
+    © 2026 Pharos LeaseBridge • Built on Pharos Atlantic • 
+    <a href="https://discord.gg/pharos" target="_blank" style="color:var(--accent);">Discord</a> • 
+    <a href="https://x.com/pharos_network" target="_blank" style="color:var(--accent);">X</a>
+    </div>
+""", unsafe_allow_html=True)
